@@ -46,11 +46,14 @@ void *client_listener(void * parm) {
 	int len, n; 
 	len = sizeof(servaddr);
 	
-	//wait for client message
-	n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
-				0, ( struct sockaddr *) &cliaddr, &len); 
-	buffer[n] = '\0'; 
-	printf("Client : %s on port %d\n", buffer, port); 
+	while(1){
+	
+		//wait for client message
+		n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
+					0, ( struct sockaddr *) &cliaddr, &len); 
+		buffer[n] = '\0'; 
+		printf("Client : %s on port %d\n", buffer, port); 
+	}
 	
 	close(sockfd);
 	return NULL;
@@ -59,7 +62,13 @@ void *client_listener(void * parm) {
 // Driver code 
 int main() { 
 	int sockfd; 
-	char buffer[MAXLINE]; 
+	/* meta structure 
+	first number selects type of message 1 - new client 2 - close connection 
+	3 - data reporting */
+	int structure[2];
+	//structure to remember free port numbers;
+	int freeports[20];
+	int freeport;
 	struct sockaddr_in servaddr, cliaddr; 
 	
 	// Creating socket file descriptor 
@@ -84,33 +93,52 @@ int main() {
 		exit(EXIT_FAILURE); 
 	} 
 	
-	//first free port
-	int freeport = 8081;
+	//initialize all ports to be free
+	for (int i = 0; i<20; i++){
+		freeports[i] = 1;	
+	}
 	//maximum number of client threads
 	pthread_t cThread[10];
-	int len, n; 
+	int len; 
 	len = sizeof(servaddr);
 	
 	//main loop
 	while(1){
-	//wait for initial client message
-	n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
-				0, ( struct sockaddr *) &cliaddr, &len); 
-	buffer[n] = '\0'; 
-	printf("Client : %s\n", buffer); 
+		//wait for initial client message
+		recvfrom(sockfd, structure, 2*sizeof(int), 
+					0, ( struct sockaddr *) &cliaddr, &len); 
 	
-	//send client first free port number
-	sendto(sockfd, &freeport, 4, 
-		0, (const struct sockaddr *) &cliaddr, len); 
-	printf("New port number sent: %d.\n", freeport); 
-	
-	//create new client thread on free port
-	pthread_create(&cThread[freeport-8081], NULL, client_listener, freeport);
-	
-	freeport++;
+		if(structure[0] == 1){
+			printf("New client\n"); 		
+			//send client first free port number
+			freeport = 0;
+			for (int i = 0; i<20; i++){
+				if (freeports[i] == 1){
+					freeport = i+8081;
+					freeports[i] = 0;
+					break;
+				}
+			}
+			sendto(sockfd, &freeport, 4, 
+				0, (const struct sockaddr *) &cliaddr, len); 
+			printf("Port number sent: %d.\n", freeport); 
+			
+			//create new client thread on free port
+			pthread_create(&cThread[freeport-8081], NULL, client_listener, freeport);
+		}
+		if(structure[0] == 2){		
+			printf("closing port number: %d.\n", structure[1]); 
+			//close old client port and kill thread
+			freeport = structure[1]-8081;
+			if(freeport>=0 && freeport<20)
+				freeports[freeport]=1;
+			
+			//TODO - send signal to communication thread to gracefully close
+		}
+		if(structure[0] == 3){	
+			//TODO - data processing to another thread
+		}
 	}
-	
-	//pthread_join(cThread, NULL);
 	
 	return 0; 
 } 

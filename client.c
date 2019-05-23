@@ -15,7 +15,11 @@
 // Driver code 
 int main() { 
 	int sockfd; 
-	char *hello = "Client connected"; 
+	/* meta structure 
+	first number selects type of message 1 - new client 2 - close connection 
+	3 - data reporting */
+	int structure[2];
+	char* hello = "Message from client";
 	struct sockaddr_in	 servaddr; 
 
 	// Creating socket file descriptor 
@@ -34,8 +38,12 @@ int main() {
 	int len; 
 	len = sizeof(servaddr);
 	
-	//send new message
-	sendto(sockfd, (const char *)hello, strlen(hello), 
+	//ask for a new port
+	structure[0] = 1;
+	structure[1] = 1;
+	
+	//send first message
+	sendto(sockfd, (char *)structure, 2*sizeof(int), 
 		0, (const struct sockaddr *) &servaddr, 
 			sizeof(servaddr)); 
 	printf("Initial message sent.\n"); 
@@ -49,14 +57,26 @@ int main() {
 	printf("New port number assigned: %d\n", freeport); 
 	
 	//wait for server to create new thread
-	sleep(1);
-	//change port and send new message
-	servaddr.sin_port = htons(freeport);
-	sendto(sockfd, (const char *)hello, strlen(hello), 
-		0, (const struct sockaddr *) &servaddr, 
-			sizeof(servaddr)); 
-	printf("Messege send on port %d.\n", freeport); 
-
+	sleep(1); 
+	int tmp = 0;
+	
+	while(tmp != 9){
+		printf("1 to send message, 9 to close client\n");
+		scanf("%d", &tmp);
+		if(tmp == 1){
+			servaddr.sin_port = htons(freeport);
+			sendto(sockfd, (const char *)hello, strlen(hello), 
+				0, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
+		}
+		if(tmp == 9){
+				structure[0] = 2;
+				structure[1] = freeport;
+	
+			servaddr.sin_port = htons(PORT);
+			sendto(sockfd, (char *)structure, 2*sizeof(int), 
+				0, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
+		}
+	}
 	close(sockfd); 
 	return 0; 
 } 
