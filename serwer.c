@@ -14,8 +14,6 @@
 
 //structure to remember free port numbers;
 volatile int freeports[20];
-volatile int freeports_tmp[20];
-
 
 //new_client
 void *client_listener(void * parm) {
@@ -58,7 +56,7 @@ void *client_listener(void * parm) {
 	len = sizeof(servaddr);
 	
 	//while - check if client didn't close communication 
-	while(freeports_tmp[port-8081] == 0){
+	while(freeports[port-8081] == 0){
 	
 		//wait for client message
 		n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
@@ -111,8 +109,7 @@ int main() {
 	
 	//initialize all ports to be free
 	for (int i = 0; i<20; i++){
-		freeports[i] = 1;
-		freeports_tmp[i] = 1;	
+		freeports[i] = 1;	
 	}
 	//maximum number of client threads
 	pthread_t cThread[10];
@@ -133,7 +130,6 @@ int main() {
 				if (freeports[i] == 1){
 					freeport = i+8081;
 					freeports[i] = 0;
-					freeports_tmp[i] = 0;
 					break;
 				}
 			}
@@ -149,7 +145,7 @@ int main() {
 			//close old client port and kill thread
 			freeport = structure[1]-8081;
 			if(freeport>=0 && freeport<20){
-				freeports_tmp[freeport]=1;
+				freeports[freeport]=-1;
 			}
 		}
 		if(structure[0] == 3){	
