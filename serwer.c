@@ -12,6 +12,11 @@
 #define PORT	 8080 
 #define MAXLINE 1024 
 
+//structure to remember free port numbers;
+volatile int freeports[20];
+volatile int freeports_tmp[20];
+
+
 //new_client
 void *client_listener(void * parm) {
 	int port = (int)parm;
@@ -35,6 +40,12 @@ void *client_listener(void * parm) {
 	servaddr.sin_addr.s_addr = INADDR_ANY; 
 	servaddr.sin_port = htons(port); 
 	
+	//add socket timeout
+	struct timeval tv;
+	tv.tv_sec = 1;
+	tv.tv_usec = 0;
+	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+	
 	// Bind the socket with the server address 
 	if ( bind(sockfd, (const struct sockaddr *)&servaddr, 
 			sizeof(servaddr)) < 0 ) 
@@ -46,16 +57,23 @@ void *client_listener(void * parm) {
 	int len, n; 
 	len = sizeof(servaddr);
 	
-	while(1){
+	//while - check if client didn't close communication 
+	while(freeports_tmp[port-8081] == 0){
 	
 		//wait for client message
 		n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
 					0, ( struct sockaddr *) &cliaddr, &len); 
-		buffer[n] = '\0'; 
-		printf("Client : %s on port %d\n", buffer, port); 
+		
+		if(n>0){
+			buffer[n] = '\0'; 
+			printf("Client : '%s' on port %d\n", buffer, port); 
+		}
 	}
 	
+	//close the port signal that it is free to use and exit
 	close(sockfd);
+	freeports[port-8081]=1;
+	printf("Thread on port %d closing \n", port); 
 	return NULL;
 }
 
@@ -66,8 +84,6 @@ int main() {
 	first number selects type of message 1 - new client 2 - close connection 
 	3 - data reporting */
 	int structure[2];
-	//structure to remember free port numbers;
-	int freeports[20];
 	int freeport;
 	struct sockaddr_in servaddr, cliaddr; 
 	
@@ -95,7 +111,8 @@ int main() {
 	
 	//initialize all ports to be free
 	for (int i = 0; i<20; i++){
-		freeports[i] = 1;	
+		freeports[i] = 1;
+		freeports_tmp[i] = 1;	
 	}
 	//maximum number of client threads
 	pthread_t cThread[10];
@@ -116,6 +133,7 @@ int main() {
 				if (freeports[i] == 1){
 					freeport = i+8081;
 					freeports[i] = 0;
+					freeports_tmp[i] = 0;
 					break;
 				}
 			}
@@ -130,10 +148,9 @@ int main() {
 			printf("closing port number: %d.\n", structure[1]); 
 			//close old client port and kill thread
 			freeport = structure[1]-8081;
-			if(freeport>=0 && freeport<20)
-				freeports[freeport]=1;
-			
-			//TODO - send signal to communication thread to gracefully close
+			if(freeport>=0 && freeport<20){
+				freeports_tmp[freeport]=1;
+			}
 		}
 		if(structure[0] == 3){	
 			//TODO - data processing to another thread
