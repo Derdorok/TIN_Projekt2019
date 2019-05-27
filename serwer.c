@@ -8,6 +8,10 @@
 #include <arpa/inet.h> 
 #include <netinet/in.h> 
 #include <pthread.h>
+#include <errno.h>
+#include <sys/select.h>
+#include <sys/fcntl.h>
+#include <sys/time.h>
 
 #define PORT	 8080 
 #define MAXLINE 1024 
@@ -47,11 +51,73 @@ void *client_listener(void * parm) {
 	len = sizeof(servaddr);
 	
 	//wait for client message
-	n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
-				0, ( struct sockaddr *) &cliaddr, &len); 
-	buffer[n] = '\0'; 
-	printf("Client : %s on port %d\n", buffer, port); 
+//	n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
+//				0, ( struct sockaddr *) &cliaddr, &len); 
+//	buffer[n] = '\0'; 
+//	printf("Client : %s on port %d\n", buffer, port); 
 	
+	fd_set readfds;
+	fcntl(sockfd, F_SETFL, O_NONBLOCK);
+	struct timeval tv, time_send, time_begin;
+	double send_delay = 5;
+	char* msg = "Received messages: ";
+	int bytes_sent, msg_counter = 0;
+	
+	gettimeofday(&time_begin, NULL);
+	while(1){
+		FD_ZERO(&readfds);
+		FD_SET(sockfd, &readfds);
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
+		gettimeofday(&time_send, NULL);
+
+		int retval = select(sockfd+1, &readfds, NULL, NULL, &tv);
+
+		if(retval == -1){
+			perror("select error"); 
+		} else if(retval == 1){
+			n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
+				0, ( struct sockaddr *) &cliaddr, &len); 
+			buffer[n] = '\0';
+			printf("(Server) Message received: [%s]\n", buffer); 
+			++msg_counter;
+
+			 
+		} else {
+			//printf("(Server) retval: %d\n", retval); 
+		}
+		
+
+		double time_elapsed = ((double)time_send.tv_sec + (double)time_send.tv_usec/1000000) - ((double)time_begin.tv_sec + (double)time_begin.tv_usec/1000000);
+		if(time_elapsed > send_delay){
+			char num_received[2];
+			sprintf(num_received, "%d", msg_counter);
+			num_received[1] = '\0';
+			char* response;
+			
+			if(response = malloc(strlen(msg)+strlen(num_received)+1)){
+				response[0] = '\0';
+				strcat(response, msg);
+				strcat(response, num_received);
+			} else {
+				printf("malloc failed!\n");
+			}
+
+
+			bytes_sent = sendto(sockfd, (const char *)response, strlen(response), 
+				0, (const struct sockaddr *) &cliaddr, 
+					sizeof(servaddr)); 
+			printf("(Server) Message sent on port %d. Bytes sent: %d. Time elapsed: %.4fs\n", port, bytes_sent, time_elapsed);
+
+			msg_counter = 0;
+			gettimeofday(&time_begin, NULL);
+			if(response){
+				free (response);
+			}
+		}
+		
+	}
+
 	close(sockfd);
 	return NULL;
 }

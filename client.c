@@ -8,6 +8,10 @@
 #include <arpa/inet.h> 
 #include <netinet/in.h>
 #include <unistd.h> 
+#include <errno.h>
+#include <sys/select.h>
+#include <sys/fcntl.h>
+#include <sys/time.h>
 
 #define PORT	 8080 
 #define MAXLINE 1024 
@@ -52,11 +56,59 @@ int main() {
 	sleep(1);
 	//change port and send new message
 	servaddr.sin_port = htons(freeport);
-	sendto(sockfd, (const char *)hello, strlen(hello), 
-		0, (const struct sockaddr *) &servaddr, 
-			sizeof(servaddr)); 
-	printf("Messege send on port %d.\n", freeport); 
+
+
+	fd_set readfds;
+	fcntl(sockfd, F_SETFL, O_NONBLOCK);
+	struct timeval tv, time_send, time_begin;
+	double send_delay = 2;
+	int bytes_read, bytes_sent;
+	char receive_data[MAXLINE];
+	char* msg = "Msg from client.";
+
+	gettimeofday(&time_begin, NULL);
+	while(1){
+		FD_ZERO(&readfds);
+		FD_SET(sockfd, &readfds);
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
+		gettimeofday(&time_send, NULL);
+
+		int retval = select(sockfd+1, &readfds, NULL, NULL, &tv);
+
+		if(retval == -1){
+			perror("select error"); 
+		} else if(retval == 1){
+			bytes_read = recvfrom(sockfd, &receive_data, MAXLINE, 
+				0, ( struct sockaddr *) &servaddr, &len); 
+			receive_data[bytes_read] = '\0';
+			printf("(Client) Message received: [%s]\n", receive_data); 
+		} else {
+			
+		}
+
+		double time_elapsed = ((double)time_send.tv_sec + (double)time_send.tv_usec/1000000) - ((double)time_begin.tv_sec + (double)time_begin.tv_usec/1000000);
+		if(time_elapsed > send_delay){
+			bytes_sent = sendto(sockfd, (const char *)msg, strlen(msg), 
+				0, (const struct sockaddr *) &servaddr, 
+					sizeof(servaddr)); 
+			printf("(Client) Message sent on port %d. Bytes sent: %d. Time elapsed: %.4fs\n", freeport, bytes_sent, time_elapsed); 
+			gettimeofday(&time_begin, NULL);
+		}
+		
+	}
 
 	close(sockfd); 
 	return 0; 
 } 
+
+
+
+
+
+
+
+
+
+
+
