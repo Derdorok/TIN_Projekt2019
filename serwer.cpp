@@ -78,7 +78,7 @@ void *client_listener(void * parm) {
 	int bytes_sent, msg_counter = 0;
 	
 	gettimeofday(&time_begin, NULL);
-	while(1){
+	while(freeports[port-8081] == 0){
 		FD_ZERO(&readfds);
 		FD_SET(sockfd, &readfds);
 		tv.tv_sec = 1;
@@ -133,6 +133,8 @@ void *client_listener(void * parm) {
 	}
 
 	close(sockfd);
+	freeports[port-8081]=1;
+	printf("Thread on port %d closing \n", port); 
 	return NULL;
 }
 
