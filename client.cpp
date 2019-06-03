@@ -22,7 +22,7 @@ int main() {
 	/* meta structure 
 	first number selects type of message 1 - new client 2 - close connection 
 	3 - data reporting */
-	int structure[2];
+	int structure[3];
 	char* hello = "Message from client";
 	struct sockaddr_in	 servaddr; 
 
@@ -42,12 +42,17 @@ int main() {
 	unsigned int len;
 	len = sizeof(servaddr);
 	
-	//ask for a new port
-	structure[0] = 1;
-	structure[1] = 1;
+	//TODO - tu trzeba pobrać dane co ile jak duże wiadomości powinien wysyłać serwer 
+	//i wpisać je do struktury poniżej, w tej chwili jest przykład
+	
+	//send initial message with session data
+	structure[0] = 1; // session initiation
+	structure[1] = 5; // delay between each message
+	structure[2] = 2000; //size in bytes of each message 
+	
 	
 	//send first message
-	sendto(sockfd, (char *)structure, 2*sizeof(int), 
+	sendto(sockfd, (char *)structure, 3*sizeof(int), 
 		0, (const struct sockaddr *) &servaddr, 
 			sizeof(servaddr)); 
 	printf("Initial message sent.\n"); 
@@ -70,11 +75,11 @@ int main() {
 	double send_delay = 2;
 	int bytes_read, bytes_sent;
 	char receive_data[MAXLINE];
-	char* msg = "Msg from client.";
+	char* msg = "Msg from client."; //TODO - długość wiadomości musi być regulowana
 
 	gettimeofday(&time_begin, NULL);
 	
-	while(1){
+	while(1){ //TODO - dorobić opcję wyłączania klienta, albo po z góry ustalonym czasie, albo interaktywnie
 		FD_ZERO(&readfds);
 		FD_SET(sockfd, &readfds);
 		tv.tv_sec = 1;
@@ -90,20 +95,48 @@ int main() {
 				0, ( struct sockaddr *) &servaddr, &len); 
 			receive_data[bytes_read] = '\0';
 			printf("(Client) Message received: [%s]\n", receive_data); 
+			
+			//TODO - tu wysłać dane o odebranych wiadomościach
+			structure[0] = 3; //received messages data
+			structure[1] = freeport; //port that client uses during session
+			structure[2] = bytes_read; //number of bytes received
+			
+			servaddr.sin_port = htons(PORT);
+			sendto(sockfd, (char *)structure, 3*sizeof(int), 
+				0, (const struct sockaddr *) &servaddr, sizeof(servaddr));
+			servaddr.sin_port = htons(freeport);	
 		} else {
 			
 		}
 
 		double time_elapsed = ((double)time_send.tv_sec + (double)time_send.tv_usec/1000000) - ((double)time_begin.tv_sec + (double)time_begin.tv_usec/1000000);
-		if(time_elapsed > send_delay){
+		if(time_elapsed > send_delay){ //TODO - send_delay powinien być regulowany
 			bytes_sent = sendto(sockfd, (const char *)msg, strlen(msg), 
 				0, (const struct sockaddr *) &servaddr, 
 					sizeof(servaddr)); 
 			printf("(Client) Message sent on port %d. Bytes sent: %d. Time elapsed: %.4fs\n", freeport, bytes_sent, time_elapsed); 
+			//TODO - tu wysłać dane o wysłanych wiadomościach
+			structure[0] = 4; //sent messages data
+			structure[1] = freeport; //port that client uses during session
+			structure[2] = strlen(msg); //number of bytes sent
+			
+			servaddr.sin_port = htons(PORT);
+			sendto(sockfd, (char *)structure, 3*sizeof(int), 
+				0, (const struct sockaddr *) &servaddr, sizeof(servaddr));
+			servaddr.sin_port = htons(freeport);	
 			gettimeofday(&time_begin, NULL);
 		}
 		
 	}
+	
+	//TODO - po zakończonej pracy klient powinien wysłać poniższą wiadomość do serwera, to już przetestowałem i działa
+	structure[0] = 2; //signal to end session
+	structure[1] = freeport; //port that client used during session
+	structure[2] = 0; //arbitrary number
+	
+	servaddr.sin_port = htons(PORT);
+	sendto(sockfd, (char *)structure, 3*sizeof(int), 
+		0, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
 
 	close(sockfd); 
 	return 0; 

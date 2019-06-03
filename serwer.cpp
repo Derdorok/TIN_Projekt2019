@@ -22,9 +22,10 @@
 volatile int freeports[20];
 
 struct thread_struct {
-    int port;
-    int logID;
-    //LogThreat::logNode* lastLog;
+    int port; //port used for communication with client
+    int logID; //unique ID for storage of logs
+    double data_delay; //delay between each message
+    int data_size; //size in bytes of each message
 };
 
 //new_client
@@ -32,6 +33,8 @@ void *client_listener(void * parm) {
 	struct thread_struct *args = parm;
 	int port = args->port;
 	int logID = args->logID;
+	double send_delay = args->data_delay;
+	int data_size = args->data_size;
 	
 	printf("New thread created %d.\n", port); 
 	
@@ -73,12 +76,11 @@ void *client_listener(void * parm) {
 	fd_set readfds;
 	fcntl(sockfd, F_SETFL, O_NONBLOCK);
 	struct timeval tv, time_send, time_begin;
-	double send_delay = 5;
 	char* msg = "Received messages: ";
 	int bytes_sent, msg_counter = 0;
 	
 	gettimeofday(&time_begin, NULL);
-	while(freeports[port-8081] == 0){
+	while(freeports[port-8081] > 1){
 		FD_ZERO(&readfds);
 		FD_SET(sockfd, &readfds);
 		tv.tv_sec = 1;
@@ -96,6 +98,7 @@ void *client_listener(void * parm) {
 			printf("(Server) Message received: [%s]\n", buffer); 
 			++msg_counter;
 
+			//TODO - dodanie danych do logów
 			 
 		} else {
 			//printf("(Server) retval: %d\n", retval); 
@@ -122,6 +125,8 @@ void *client_listener(void * parm) {
 				0, (const struct sockaddr *) &cliaddr, 
 					sizeof(servaddr)); 
 			printf("(Server) Message sent on port %d. Bytes sent: %d. Time elapsed: %.4fs\n", port, bytes_sent, time_elapsed);
+			
+			//TODO - dodanie danych do logów
 
 			msg_counter = 0;
 			gettimeofday(&time_begin, NULL);
@@ -141,12 +146,9 @@ void *client_listener(void * parm) {
 // Driver code 
 int main() { 
 	int sockfd; 
-	/* meta structure 
-	first number selects type of message 1 - new client 2 - close connection 
-	3 - data reporting */
-	int structure[2];
+	int structure[3]; //meta structure
 	int freeport;
-	int ID = 0;
+	int ID = 100;
 	struct sockaddr_in servaddr, cliaddr; 
 	
 	// Creating socket file descriptor 
@@ -171,6 +173,8 @@ int main() {
 		exit(EXIT_FAILURE); 
 	} 
 	
+	//TODO - stworzyć wątek do przetwarzania danych
+	
 	//initialize all ports to be free
 	for (int i = 0; i<20; i++){
 		freeports[i] = 1;	
@@ -184,46 +188,57 @@ int main() {
 	//main loop
 	while(1){
 		//wait for initial client message
-		recvfrom(sockfd, structure, 2*sizeof(int), 
+		recvfrom(sockfd, structure, 3*sizeof(int), 
 					0, ( struct sockaddr *) &cliaddr, &len); 
 	
-		if(structure[0] == 1){
-			printf("New client\n"); 		
+		if(structure[0] == 1){		
+			//increase unique ID for logs storage
+			ID++;
 			//send client first free port number
 			freeport = 0;
 			for (int i = 0; i<20; i++){
 				if (freeports[i] == 1){
 					freeport = i+8081;
-					freeports[i] = 0;
+					freeports[i] = ID;
 					break;
 				}
 			}
 			sendto(sockfd, &freeport, 4, 
 				0, (const struct sockaddr *) &cliaddr, len); 
-			printf("Port number sent: %d.\n", freeport); 
-			
-			ID++;
-			//LogThreat::logNode* tmp = system->addThreat(ID);
+			printf("New client, port number sent: %d ID: %d.\n", freeport, ID); 
 			
 			struct thread_struct args;
 			args.port = freeport;
 			args.logID = ID;
-			//args.lastLog = tmp;
-			
-			//create new client thread on free port an provide ID for logs
+			args.data_delay = structure[1];
+			args.data_size = structure[2];
+		
+			//create new client thread on free port and supply it with data needed for communication
 			pthread_create(&cThread[freeport-8081], NULL, client_listener, (void *)&args);
 		}
-		if(structure[0] == 2){		
-			printf("closing port number: %d.\n", structure[1]); 
-			//close old client port and kill thread
+		if(structure[0] == 2){	
+			//Signal to close old client port and kill thread	
+			printf("Client requested end of session, closing port number: %d.\n", structure[1]); 
 			freeport = structure[1]-8081;
 			if(freeport>=0 && freeport<20){
 				freeports[freeport]=-1;
 			}
 		}
-		if(structure[0] == 3){
-
-			//TODO - data processing to another thread
+		if(structure[0] == 3){		 
+			//Data about messages client received
+			int data_port = structure[1];
+			int data_bytes = structure[2];
+			int data_ID = freeports[data_port-8081];
+			printf("Client on port number: %d with log ID: %d recieived %d bytes.\n", data_port, data_ID, data_bytes);
+			//TODO - dodanie danych do logów
+		}
+		if(structure[0] == 4){		
+			//Data about messages client sent
+			int data_port = structure[1];
+			int data_bytes = structure[2];
+			int data_ID = freeports[data_port-8081];
+			printf("Client on port number: %d with log ID: %d sent %d bytes.\n", data_port, data_ID, data_bytes);
+			//TODO - dodanie danych do logów
 		}
 	}
 	
