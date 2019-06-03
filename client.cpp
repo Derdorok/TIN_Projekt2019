@@ -19,9 +19,6 @@
 // Driver code 
 int main() { 
 	int sockfd; 
-	/* meta structure 
-	first number selects type of message 1 - new client 2 - close connection 
-	3 - data reporting */
 	int structure[3];
 	char* hello = "Message from client";
 	struct sockaddr_in	 servaddr; 
@@ -42,7 +39,7 @@ int main() {
 	unsigned int len;
 	len = sizeof(servaddr);
 	
-	//TODO - tu trzeba pobrać dane co ile jak duże wiadomości powinien wysyłać serwer 
+	//TODO - tu trzeba pobrać dane co ile i jak duże wiadomości powinien wysyłać serwer 
 	//i wpisać je do struktury poniżej, w tej chwili jest przykład
 	
 	//send initial message with session data
@@ -96,7 +93,7 @@ int main() {
 			receive_data[bytes_read] = '\0';
 			printf("(Client) Message received: [%s]\n", receive_data); 
 			
-			//TODO - tu wysłać dane o odebranych wiadomościach
+			//send data about transmission
 			structure[0] = 3; //received messages data
 			structure[1] = freeport; //port that client uses during session
 			structure[2] = bytes_read; //number of bytes received
@@ -115,7 +112,7 @@ int main() {
 				0, (const struct sockaddr *) &servaddr, 
 					sizeof(servaddr)); 
 			printf("(Client) Message sent on port %d. Bytes sent: %d. Time elapsed: %.4fs\n", freeport, bytes_sent, time_elapsed); 
-			//TODO - tu wysłać dane o wysłanych wiadomościach
+			//send data about transmission
 			structure[0] = 4; //sent messages data
 			structure[1] = freeport; //port that client uses during session
 			structure[2] = strlen(msg); //number of bytes sent
