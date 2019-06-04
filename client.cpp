@@ -22,16 +22,41 @@
 // Driver code 
 int main(int argc, char* argv[]) { 
 	int serv_msg_len = 10, cli_msg_len = 10;
-	double send_delay = 2;
+	double send_delay = 2, serv_send_delay = 5;
 	if(argc == 2) {
-		cli_msg_len = atoi(argv[1]);
+		if(atoi(argv[1]) > 0){	
+			cli_msg_len = atoi(argv[1]);
+		}
 	} else if(argc == 3) {
-		cli_msg_len = atoi(argv[1]);
-		serv_msg_len = atoi(argv[2]);
-	} else if(argc > 3) {
-		cli_msg_len = atoi(argv[1]);
-		serv_msg_len = atoi(argv[2]);
-		send_delay = atof(argv[3]);
+		if(atoi(argv[1]) > 0){	
+			cli_msg_len = atoi(argv[1]);
+		}
+		if(atoi(argv[2]) > 0){	
+			serv_msg_len = atoi(argv[2]);
+		}
+	} else if(argc == 4) {
+		if(atoi(argv[1]) > 0){	
+			cli_msg_len = atoi(argv[1]);
+		}
+		if(atoi(argv[2]) > 0){	
+			serv_msg_len = atoi(argv[2]);
+		}
+		if(atoi(argv[3]) > 0){	
+			send_delay = atof(argv[3]);
+		}
+	} else if(argc > 4) {
+		if(atoi(argv[1]) > 0){	
+			cli_msg_len = atoi(argv[1]);
+		}
+		if(atoi(argv[2]) > 0){	
+			serv_msg_len = atoi(argv[2]);
+		}
+		if(atoi(argv[3]) > 0){	
+			send_delay = atof(argv[3]);
+		}
+		if(atoi(argv[4]) > 0){	
+			serv_send_delay = atof(argv[4]);
+		}
 	}
 
 	int sockfd; 
@@ -53,13 +78,10 @@ int main(int argc, char* argv[]) {
 	
 	unsigned int len;
 	len = sizeof(servaddr);
-	
-	//TODO - tu trzeba pobrać dane co ile wiadomości powinien wysyłać serwer 
-	//i wpisać je do struktury poniżej, w tej chwili jest przykład
-	
+		
 	//send initial message with session data
 	structure[0] = 1; // session initiation
-	structure[1] = 5; // delay between each message (sec)
+	structure[1] = serv_send_delay; // delay between each message (sec)
 	structure[2] = serv_msg_len; //size in bytes of each message 
 	
 	
