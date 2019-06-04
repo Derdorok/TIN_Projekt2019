@@ -12,15 +12,54 @@
 #include <sys/select.h>
 #include <sys/fcntl.h>
 #include <sys/time.h>
+#include <iostream>
+#include <poll.h>
 
 #define PORT	 8080 
 #define MAXLINE 1024 
 
 // Driver code 
-int main() { 
+int main(int argc, char* argv[]) { 
+	int serv_msg_len = 10, cli_msg_len = 10;
+	double send_delay = 2, serv_send_delay = 5;
+	if(argc == 2) {
+		if(atoi(argv[1]) > 0){	
+			cli_msg_len = atoi(argv[1]);
+		}
+	} else if(argc == 3) {
+		if(atoi(argv[1]) > 0){	
+			cli_msg_len = atoi(argv[1]);
+		}
+		if(atoi(argv[2]) > 0){	
+			serv_msg_len = atoi(argv[2]);
+		}
+	} else if(argc == 4) {
+		if(atoi(argv[1]) > 0){	
+			cli_msg_len = atoi(argv[1]);
+		}
+		if(atoi(argv[2]) > 0){	
+			serv_msg_len = atoi(argv[2]);
+		}
+		if(atoi(argv[3]) > 0){	
+			send_delay = atof(argv[3]);
+		}
+	} else if(argc > 4) {
+		if(atoi(argv[1]) > 0){	
+			cli_msg_len = atoi(argv[1]);
+		}
+		if(atoi(argv[2]) > 0){	
+			serv_msg_len = atoi(argv[2]);
+		}
+		if(atoi(argv[3]) > 0){	
+			send_delay = atof(argv[3]);
+		}
+		if(atoi(argv[4]) > 0){	
+			serv_send_delay = atof(argv[4]);
+		}
+	}
+
 	int sockfd; 
 	int structure[3];
-	char* hello = "Message from client";
 	struct sockaddr_in	 servaddr; 
 
 	// Creating socket file descriptor 
@@ -38,15 +77,11 @@ int main() {
 	
 	unsigned int len;
 	len = sizeof(servaddr);
-	
-	//TODO - tu trzeba pobrać dane co ile i jak duże wiadomości powinien wysyłać serwer 
-	//i wpisać je do struktury poniżej, w tej chwili jest przykład
-	
+		
 	//send initial message with session data
 	structure[0] = 1; // session initiation
-	structure[1] = 5; // delay between each message
-	structure[2] = 2000; //size in bytes of each message 
-	
+	structure[1] = serv_send_delay; // delay between each message (sec)
+	structure[2] = serv_msg_len; //size in bytes of each message 	
 	
 	//send first message
 	sendto(sockfd, (char *)structure, 3*sizeof(int), 
@@ -69,18 +104,28 @@ int main() {
 	fd_set readfds;
 	fcntl(sockfd, F_SETFL, O_NONBLOCK);
 	struct timeval tv, time_send, time_begin;
-	double send_delay = 2;
+
 	int bytes_read, bytes_sent;
 	char receive_data[MAXLINE];
-	char* msg = "Msg from client."; //TODO - długość wiadomości musi być regulowana
+
+	char* msg = (char *)malloc(sizeof(char)*(cli_msg_len+1)); 
+	for(int i = 0; i<cli_msg_len; ++i){
+		msg[i] = 'C';
+	}
+	msg[cli_msg_len] = '\0';
+
+	pollfd cinfd[1];
+	cinfd[0].fd = fileno(stdin);
+	cinfd[0].events = POLLIN;
+	std::string command;
 
 	gettimeofday(&time_begin, NULL);
-	
-	while(1){ //TODO - dorobić opcję wyłączania klienta, albo po z góry ustalonym czasie, albo interaktywnie
+	while(1){ 
 		FD_ZERO(&readfds);
 		FD_SET(sockfd, &readfds);
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		tv.tv_sec = 0;
+		tv.tv_usec = 5000;
+
 		gettimeofday(&time_send, NULL);
 
 		int retval = select(sockfd+1, &readfds, NULL, NULL, &tv);
@@ -102,12 +147,10 @@ int main() {
 			sendto(sockfd, (char *)structure, 3*sizeof(int), 
 				0, (const struct sockaddr *) &servaddr, sizeof(servaddr));
 			servaddr.sin_port = htons(freeport);	
-		} else {
-			
-		}
+		} 
 
 		double time_elapsed = ((double)time_send.tv_sec + (double)time_send.tv_usec/1000000) - ((double)time_begin.tv_sec + (double)time_begin.tv_usec/1000000);
-		if(time_elapsed > send_delay){ //TODO - send_delay powinien być regulowany
+		if(time_elapsed > send_delay){ 
 			bytes_sent = sendto(sockfd, (const char *)msg, strlen(msg), 
 				0, (const struct sockaddr *) &servaddr, 
 					sizeof(servaddr)); 
@@ -123,7 +166,14 @@ int main() {
 			servaddr.sin_port = htons(freeport);	
 			gettimeofday(&time_begin, NULL);
 		}
-		
+
+		if(poll(cinfd,1,1)){
+			getline(std::cin, command);
+			if(command == "q"){
+				printf("Exiting...\n");
+				break;
+			}
+		}	
 	}
 	
 	//TODO - po zakończonej pracy klient powinien wysłać poniższą wiadomość do serwera, to już przetestowałem i działa
@@ -134,6 +184,10 @@ int main() {
 	servaddr.sin_port = htons(PORT);
 	sendto(sockfd, (char *)structure, 3*sizeof(int), 
 		0, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
+
+	if(msg){
+		free(msg);
+	}
 
 	close(sockfd); 
 	return 0; 

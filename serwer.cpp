@@ -12,6 +12,7 @@
 #include <sys/select.h>
 #include <sys/fcntl.h>
 #include <sys/time.h>
+#include <math.h>
 
 #include "LogThreat.h"
 
@@ -30,7 +31,7 @@ struct thread_struct {
 
 //new_client
 void *client_listener(void * parm) {
-	struct thread_struct *args = parm;
+	struct thread_struct *args = (thread_struct *)parm;
 	int port = args->port;
 	int logID = args->logID;
 	double send_delay = args->data_delay;
@@ -76,15 +77,22 @@ void *client_listener(void * parm) {
 	fd_set readfds;
 	fcntl(sockfd, F_SETFL, O_NONBLOCK);
 	struct timeval tv, time_send, time_begin;
-	char* msg = "Received messages: ";
+
+	char* msg = (char *)malloc(sizeof(char)*(data_size+1)); 
+	for(int i = 0; i<data_size; ++i){
+		msg[i] = 'S';
+	}
+	msg[data_size] = '\0';
+
 	int bytes_sent, msg_counter = 0;
 	
 	gettimeofday(&time_begin, NULL);
 	while(freeports[port-8081] > 1){
 		FD_ZERO(&readfds);
 		FD_SET(sockfd, &readfds);
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		tv.tv_sec = 0;
+		tv.tv_usec = 5000;
+
 		gettimeofday(&time_send, NULL);
 
 		int retval = select(sockfd+1, &readfds, NULL, NULL, &tv);
@@ -107,21 +115,24 @@ void *client_listener(void * parm) {
 
 		double time_elapsed = ((double)time_send.tv_sec + (double)time_send.tv_usec/1000000) - ((double)time_begin.tv_sec + (double)time_begin.tv_usec/1000000);
 		if(time_elapsed > send_delay){
-			char num_received[2];
+/*
+			int n = log10(msg_counter) + 1;
+			char* num_received = (char*)malloc(sizeof(char)*(n+1));
 			sprintf(num_received, "%d", msg_counter);
-			num_received[1] = '\0';
+			num_received[n] = '\0';
 			char* response;
-			
-			if(response = malloc(strlen(msg)+strlen(num_received)+1)){
+						
+			if(response = (char *)malloc(strlen(msg)+strlen(num_received)+1)){
 				response[0] = '\0';
 				strcat(response, msg);
 				strcat(response, num_received);
 			} else {
 				printf("malloc failed!\n");
 			}
+*/
 
-
-			bytes_sent = sendto(sockfd, (const char *)response, strlen(response), 
+			bytes_sent = sendto(sockfd, (const char *)msg, strlen(msg), 
+>>>>>>> server_client_simultaneous
 				0, (const struct sockaddr *) &cliaddr, 
 					sizeof(servaddr)); 
 			printf("(Server) Message sent on port %d. Bytes sent: %d. Time elapsed: %.4fs\n", port, bytes_sent, time_elapsed);
@@ -130,11 +141,21 @@ void *client_listener(void * parm) {
 
 			msg_counter = 0;
 			gettimeofday(&time_begin, NULL);
+
+/*
 			if(response){
 				free (response);
 			}
+			if(num_received){
+				free (num_received);
+			}
+*/
 		}
 		
+	}
+
+	if(msg){
+		free(msg);
 	}
 
 	close(sockfd);
