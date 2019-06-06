@@ -21,7 +21,7 @@ LogThreat::LogThreat(){
     savedLogsFromServerRoot->next = savedLogsFromServerEnd;
     savedLogsFromServerTail = savedLogsFromServerRoot;
 
-    cout<<"utworzono obiekt klasy"<<endl;
+    //cout<<"utworzono obiekt klasy"<<endl;
 }
 
 LogThreat::~LogThreat(){
@@ -42,7 +42,7 @@ LogThreat::~LogThreat(){
     }
     delete savedLogsFromServerRoot;
     delete savedLogsFromServerEnd;
-    cout<<"zniszczono obiekt klasy"<<endl;
+    //cout<<"zniszczono obiekt klasy"<<endl;
 }
 
 //======================PUBLIC===============================
@@ -60,7 +60,7 @@ LogThreat::logNode *LogThreat::addThreat(int threatId, int port){
     tail->next = newThreat;
     tail = newThreat;
 
-    cout<<"ROOT:     Dodano wątek: "<<threatId<<endl;
+    //cout<<"ROOT:     Dodano wątek: "<<threatId<<endl;
 
     return newThreat->log;
 }
@@ -77,11 +77,11 @@ void LogThreat::deleteThreat(int threatId){
 
         deleteLog(del->log);
         delete del;
-        cout<<"ROOT:     Usunięto wątek: "<<threatId<<endl;
+        //cout<<"ROOT:     Usunięto wątek: "<<threatId<<endl;
         return;
     }
 
-    cout<<"ROOT:     NIE Usunięto wątku: "<<threatId<<endl;
+    //cout<<"ROOT:     NIE Usunięto wątku: "<<threatId<<endl;
 }
 
 LogThreat::logNode *LogThreat::addLog(logNode* lastLog, int logSize, int type){
@@ -100,7 +100,7 @@ LogThreat::logNode *LogThreat::addLog(logNode* lastLog, int logSize, int type){
     newLog->port = lastLog->port;
 
     lastLog->next = newLog;
-    cout<<"     ROOT:     Dodano Log: "<<newLog->logId<<" do wątku: "<<newLog->threatId<<endl;
+    //cout<<"     ROOT:     Dodano Log: "<<newLog->logId<<" do wątku: "<<newLog->threatId<<endl;
     return newLog;
 }
 
@@ -119,7 +119,7 @@ void LogThreat::saveServerLogs(int threatId){
         savePointer->logtail = savePointer->log;
         savePointer->next = savedLogsFromClientEnd;
 
-        cout<<"SAVEROOT: Dodano wątek: "<<threatId<<endl;
+        //cout<<"SAVEROOT: Dodano wątek: "<<threatId<<endl;
 
         savedLogsFromClientTail->next = savePointer;
         savedLogsFromClientTail = savePointer;
@@ -134,7 +134,7 @@ void LogThreat::saveServerLogs(int threatId){
     pointer->log->next = pom->next;
     pom->next=nullptr;
 
-    cout<<"     SAVEROOT: Dodano logi: "<<endl;
+    //cout<<"     SAVEROOT: Dodano logi: "<<endl;
 }
 
 void LogThreat::saveClientLogs(int threatId, int port, int sizeLog, int type){
@@ -150,7 +150,7 @@ void LogThreat::saveClientLogs(int threatId, int port, int sizeLog, int type){
         savePointer->logtail = savePointer->log;
         savePointer->next = savedLogsFromServerEnd;
 
-        cout<<"SAVEROOT: Dodano wątek: "<<threatId<<endl;
+        //cout<<"SAVEROOT: Dodano wątek: "<<threatId<<endl;
 
         savedLogsFromServerTail->next = savePointer;
         savedLogsFromServerTail = savePointer;
@@ -163,11 +163,11 @@ void LogThreat::saveClientLogs(int threatId, int port, int sizeLog, int type){
     newLog->logSize = sizeLog;
     newLog->logId = (savePointer->logtail->logId)+1;
     if(type==1) {
-        newLog->arriveTime = 0;
+        newLog->arriveTime = time(0);
         newLog->type = 1;
     }
     else {
-        newLog->sendTime = 0;
+        newLog->sendTime = time(0);
         newLog->type = 2;
     }
     newLog->port = port;
@@ -176,7 +176,7 @@ void LogThreat::saveClientLogs(int threatId, int port, int sizeLog, int type){
     savePointer->logtail = newLog;
 
 
-    cout<<"     SAVEROOT: Dodano logi Klienta: "<<endl;
+    //cout<<"     SAVEROOT: Dodano logi Klienta: "<<endl;
 
 }
 
@@ -188,29 +188,29 @@ void LogThreat::printStructure(threatNode* start){
 
 void LogThreat::saveLogsToFile(){
 
-    cout<<"zapis do pliku"<<endl;
+    cout<<"zapis danych do pliku"<<endl;
 
     for(threatNode * pointer = savedLogsFromClientRoot->next; pointer->next!=nullptr; pointer=pointer->next){
         fstream plikSerwer;
         string plik = "Dane_serwera/watek_";
         plik+= to_string(pointer->threatId);
         plik+=".txt";
-        cout<<"zapis do: "<<plik<<endl;
+        //cout<<"zapis do: "<<plik<<endl;
 
 
         plikSerwer.open(plik, ios::out | ios::app);
         logNode* logPointer=pointer->log->next;
         if(logPointer!=pointer->logtail){
             for(logPointer; logPointer->next!=pointer->logtail; logPointer=logPointer->next){
-                cout<<"Zapis logu: "<<logPointer->logId<<endl;
-                if(logPointer->type==1)plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"       Czas Przybycia: "<<logPointer->arriveTime<<"            Rozmiar: "<<logPointer->logSize<<endl;
-                else plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"        Czas Wysłania: "<<logPointer->sendTime<<"            Rozmiar: "<<logPointer->logSize<<endl;
+                //cout<<"Zapis logu: "<<logPointer->logId<<endl;
+                if(logPointer->type==1)plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"            Rozmiar: "<<logPointer->logSize<<"       Czas Przybycia: "<<ctime(&(logPointer->arriveTime));
+                else plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"            Rozmiar: "<<logPointer->logSize<<"        Czas Wysłania: "<<ctime(&(logPointer->sendTime));
             }
-            if(logPointer->type==1)plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"       Czas Przybycia: "<<logPointer->arriveTime<<"            Rozmiar: "<<logPointer->logSize<<endl;
-            else plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"        Czas Wysłania: "<<logPointer->sendTime<<"            Rozmiar: "<<logPointer->logSize<<endl;
+            if(logPointer->type==1)plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"            Rozmiar: "<<logPointer->logSize<<"       Czas Przybycia: "<<ctime(&(logPointer->arriveTime));
+            else plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"            Rozmiar: "<<logPointer->logSize<<"        Czas Wysłania: "<<ctime(&(logPointer->sendTime));
 
-            cout<<"Zapis logu: "<<logPointer->logId<<endl;
-            cout<<" logTail "<<pointer->logtail->logId<<endl;
+            //cout<<"Zapis logu: "<<logPointer->logId<<endl;
+            //cout<<" logTail "<<pointer->logtail->logId<<endl;
             logPointer->next=nullptr;
             deleteLog(pointer->log->next);
             pointer->log->next=pointer->logtail;
@@ -224,22 +224,22 @@ void LogThreat::saveLogsToFile(){
         string plik = "Dane_klientow/watek_";
         plik+= to_string(pointer->threatId);
         plik+=".txt";
-        cout<<"zapis do: "<<plik<<endl;
+        //cout<<"zapis do: "<<plik<<endl;
 
 
         plikSerwer.open(plik, ios::out | ios::app);
         logNode* logPointer=pointer->log->next;
         if(logPointer!=pointer->logtail){
             for(logPointer; logPointer->next!=pointer->logtail; logPointer=logPointer->next){
-                cout<<"Zapis logu: "<<logPointer->logId<<endl;
-                if(logPointer->type==1)plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"       Czas Przybycia: "<<logPointer->arriveTime<<"            Rozmiar: "<<logPointer->logSize<<endl;
-                else plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"        Czas Wysłania: "<<logPointer->sendTime<<"            Rozmiar: "<<logPointer->logSize<<endl;
+                //cout<<"Zapis logu: "<<logPointer->logId<<endl;
+                if(logPointer->type==1)plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"            Rozmiar: "<<logPointer->logSize<<"       Czas Przybycia: "<<ctime(&(logPointer->arriveTime));
+                else plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"            Rozmiar: "<<logPointer->logSize<<"        Czas Wysłania: "<<ctime(&(logPointer->sendTime));
             }
-            if(logPointer->type==1)plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"       Czas Przybycia: "<<logPointer->arriveTime<<"            Rozmiar: "<<logPointer->logSize<<endl;
-            else plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"        Czas Wysłania: "<<logPointer->sendTime<<"            Rozmiar: "<<logPointer->logSize<<endl;
+            if(logPointer->type==1)plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"            Rozmiar: "<<logPointer->logSize<<"       Czas Przybycia: "<<ctime(&(logPointer->arriveTime));
+            else plikSerwer<<"Nr. "<<logPointer->logId<<"    Port: "<<logPointer->port<<"            Rozmiar: "<<logPointer->logSize<<"        Czas Wysłania: "<<ctime(&(logPointer->sendTime));
 
-            cout<<"Zapis logu: "<<logPointer->logId<<endl;
-            cout<<" logTail "<<pointer->logtail->logId<<endl;
+            //cout<<"Zapis logu: "<<logPointer->logId<<endl;
+            //cout<<" logTail "<<pointer->logtail->logId<<endl;
             logPointer->next=nullptr;
             deleteLog(pointer->log->next);
             pointer->log->next=pointer->logtail;
@@ -265,18 +265,18 @@ void LogThreat::deleteSavedThreat(threatNode* start, int threatId){
 
         deleteLog(del->log);
         delete del;
-        cout<<"ROOT:     Usunięto wątek: "<<threatId<<endl;
+        //cout<<"ROOT:     Usunięto wątek: "<<threatId<<endl;
         return;
     }
 
-    cout<<"ROOT:     NIE Usunięto wątku: "<<threatId<<endl;
+    //cout<<"ROOT:     NIE Usunięto wątku: "<<threatId<<endl;
 }
 
 void LogThreat::deleteLog(logNode* log){
     if(log->next != nullptr)
         deleteLog(log->next);
 
-    cout<<"ROOT:     Usunięto log: "<<log->logId<<"    wątku: "<<log->threatId<<endl;
+    //cout<<"ROOT:     Usunięto log: "<<log->logId<<"    wątku: "<<log->threatId<<endl;
     delete log;
 }
 
@@ -284,12 +284,12 @@ void LogThreat::printThreat(threatNode* start){
     if(start->next->next != nullptr)
         printThreat(start->next);
     printLog(start->log);
-    cout<<"     THREAT: "<<start->threatId<<endl;
+    //cout<<"     THREAT: "<<start->threatId<<endl;
 
 }
 
 void LogThreat::printLog(logNode* log){
     if(log->next != nullptr)
         printLog(log->next);
-    cout<<"         LOG: "<<log->logId<<endl;
+    //cout<<"         LOG: "<<log->logId<<endl;
 }

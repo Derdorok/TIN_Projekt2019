@@ -33,18 +33,6 @@ struct thread_struct {
     int data_size; //size in bytes of each message
 };
 
-//funkcja dodawania logów przez wątki
-LogThreat::logNode * addLog(LogThreat::logNode* lastLog, int logSize){
-    LogThreat::logNode* newLog = new LogThreat::logNode;
-    newLog->logId = (lastLog->logId)+1;
-    newLog->threatId = lastLog->threatId;
-    newLog->logSize = logSize;
-    newLog->arriveTime = time(0);
-
-    lastLog->next = newLog;
-    printf("     ROOT:     Dodano Log: %d do wątku: %d\n", newLog->logId, newLog->threatId);
-    return newLog;
-}
 
 //new_client
 void *client_listener(void * parm) {
@@ -53,6 +41,7 @@ void *client_listener(void * parm) {
 	int logID = args->logID;
 	double send_delay = args->data_delay;
 	int data_size = args->data_size;
+
 
 	printf("New thread created %d.\n", port);
 
