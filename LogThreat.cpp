@@ -66,8 +66,12 @@ LogThreat::logNode *LogThreat::addThreat(int threatId){
 void LogThreat::deleteThreat(int threatId){
     threatNode* pointer = searchPrev(root, threatId);
     if(pointer!=nullptr){
+        if(pointer->next == tail){
+        tail=pointer;
+        }
         threatNode* del = pointer->next;
         pointer->next = del->next;
+        del->next = nullptr;
 
         deleteLog(del->log);
         delete del;
