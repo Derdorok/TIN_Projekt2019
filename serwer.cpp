@@ -14,7 +14,7 @@
 #include <sys/time.h>
 #include <math.h>
 
-#include "LogThreat.h"
+//#include "LogThreat.h"
 
 #define PORT	 8080 
 #define MAXLINE 1024 
@@ -132,7 +132,6 @@ void *client_listener(void * parm) {
 */
 
 			bytes_sent = sendto(sockfd, (const char *)msg, strlen(msg), 
->>>>>>> server_client_simultaneous
 				0, (const struct sockaddr *) &cliaddr, 
 					sizeof(servaddr)); 
 			printf("(Server) Message sent on port %d. Bytes sent: %d. Time elapsed: %.4fs\n", port, bytes_sent, time_elapsed);
