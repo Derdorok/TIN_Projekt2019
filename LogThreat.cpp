@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <string>
 #include "LogThreat.h"
 using namespace std;
 
@@ -122,8 +124,6 @@ void LogThreat::saveServerLogs(int threatId){
 }
 
 void LogThreat::saveClientLogs(int threatId){
-    threatNode* pointer = searchPrev(root, threatId)->next;
-    threatNode* savePointer = searchPrev(savedLogsFromServerRoot, threatId)->next;
 
 }
 
@@ -133,6 +133,62 @@ void LogThreat::printStructure(threatNode* start){
     cout<<"==========POCZĄTEK=========="<<endl;
 }
 
+void LogThreat::saveLogsToFile(){
+
+    cout<<"zapis do pliku"<<endl;
+
+    for(threatNode * pointer = savedLogsFromClientRoot->next; pointer->next!=nullptr; pointer=pointer->next){
+        fstream plikSerwer;
+        string plik = "Dane_serwera/watek_";
+        plik+= to_string(pointer->threatId);
+        plik+=".txt";
+        cout<<"zapis do: "<<plik<<endl;
+
+
+        plikSerwer.open(plik, ios::out | ios::app);
+        logNode* logPointer=pointer->log->next;
+        if(logPointer!=pointer->logtail){
+            for(logPointer; logPointer->next!=pointer->logtail; logPointer=logPointer->next){
+            cout<<"Zapis logu: "<<logPointer->logId<<endl;
+            plikSerwer<<"Nr. "<<logPointer->logId<<"       Czas Przybycia: "<<logPointer->arriveTime<<"            Rozmiar: "<<logPointer->logSize<<endl;
+            }
+            plikSerwer<<"Nr. "<<logPointer->logId<<"       Czas Przybycia: "<<logPointer->arriveTime<<"            Rozmiar: "<<logPointer->logSize<<endl;
+            cout<<"Zapis logu: "<<logPointer->logId<<endl;
+            cout<<" logTail "<<pointer->logtail->logId<<endl;
+            logPointer->next=nullptr;
+            deleteLog(pointer->log->next);
+            pointer->log->next=pointer->logtail;
+        }
+
+        plikSerwer.close();
+    }
+
+    for(threatNode * pointer = savedLogsFromServerRoot->next; pointer->next!=nullptr; pointer=pointer->next){
+        fstream plikSerwer;
+        string plik = "Dane_klientow/watek_";
+        plik+= to_string(pointer->threatId);
+        plik+=".txt";
+        cout<<"zapis do: "<<plik<<endl;
+
+
+        plikSerwer.open(plik, ios::out | ios::app);
+        logNode* logPointer=pointer->log->next;
+        if(logPointer!=pointer->logtail){
+            for(logPointer; logPointer->next!=pointer->logtail; logPointer=logPointer->next){
+            cout<<"Zapis logu: "<<logPointer->logId<<endl;
+            plikSerwer<<"Nr. "<<logPointer->logId<<"       Czas Przybycia: "<<logPointer->arriveTime<<"            Rozmiar: "<<logPointer->logSize<<endl;
+            }
+            plikSerwer<<"Nr. "<<logPointer->logId<<"       Czas Przybycia: "<<logPointer->arriveTime<<"            Rozmiar: "<<logPointer->logSize<<endl;
+            cout<<"Zapis logu: "<<logPointer->logId<<endl;
+            cout<<" logTail "<<pointer->logtail->logId<<endl;
+            logPointer->next=nullptr;
+            deleteLog(pointer->log->next);
+            pointer->log->next=pointer->logtail;
+        }
+
+        plikSerwer.close();
+    }
+}
 //======================PRIVATE===============================
 LogThreat::threatNode *LogThreat::searchPrev(threatNode* start, int threatId){
     for(threatNode* pointer = start; pointer->next->next!=nullptr; pointer=pointer->next){
