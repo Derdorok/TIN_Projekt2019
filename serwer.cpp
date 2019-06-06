@@ -65,7 +65,8 @@ void *client_listener(void * parm) {
 		exit(EXIT_FAILURE); 
 	} 
 	
-	int len, n; 
+	int n;
+	unsigned int len; 
 	len = sizeof(servaddr);
 	
 	//wait for client message
@@ -132,7 +133,6 @@ void *client_listener(void * parm) {
 */
 
 			bytes_sent = sendto(sockfd, (const char *)msg, strlen(msg), 
->>>>>>> server_client_simultaneous
 				0, (const struct sockaddr *) &cliaddr, 
 					sizeof(servaddr)); 
 			printf("(Server) Message sent on port %d. Bytes sent: %d. Time elapsed: %.4fs\n", port, bytes_sent, time_elapsed);
