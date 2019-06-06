@@ -22,6 +22,7 @@
 int main(int argc, char* argv[]) { 
 	int serv_msg_len = 10, cli_msg_len = 10;
 	double send_delay = 2, serv_send_delay = 5;
+	char* serv_addr = "127.0.0.1";
 	if(argc == 2) {
 		if(atoi(argv[1]) > 0){	
 			cli_msg_len = atoi(argv[1]);
@@ -43,7 +44,7 @@ int main(int argc, char* argv[]) {
 		if(atoi(argv[3]) > 0){	
 			send_delay = atof(argv[3]);
 		}
-	} else if(argc > 4) {
+	} else if(argc == 5) {
 		if(atoi(argv[1]) > 0){	
 			cli_msg_len = atoi(argv[1]);
 		}
@@ -55,6 +56,22 @@ int main(int argc, char* argv[]) {
 		}
 		if(atoi(argv[4]) > 0){	
 			serv_send_delay = atof(argv[4]);
+		}
+	}else if(argc > 5) {
+		if(atoi(argv[1]) > 0){	
+			cli_msg_len = atoi(argv[1]);
+		}
+		if(atoi(argv[2]) > 0){	
+			serv_msg_len = atoi(argv[2]);
+		}
+		if(atoi(argv[3]) > 0){	
+			send_delay = atof(argv[3]);
+		}
+		if(atoi(argv[4]) > 0){	
+			serv_send_delay = atof(argv[4]);
+		}
+		if(atoi(argv[5]) > 0){	
+			serv_addr = argv[5];
 		}
 	}
 
@@ -73,7 +90,7 @@ int main(int argc, char* argv[]) {
 	// Filling server information 
 	servaddr.sin_family = AF_INET; 
 	servaddr.sin_port = htons(PORT); 
-	servaddr.sin_addr.s_addr = INADDR_ANY; 
+	servaddr.sin_addr.s_addr = inet_addr(serv_addr); 
 	
 	unsigned int len;
 	len = sizeof(servaddr);
