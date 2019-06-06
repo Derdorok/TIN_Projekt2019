@@ -123,7 +123,7 @@ void *client_listener(void * parm) {
 			printf("(Server) Message received: [%s]\n", buffer);
 			++msg_counter;
 
-			 args->pointerOnLog = logThread->addLog(args->pointerOnLog, 10);
+			 args->pointerOnLog = logThread->addLog(args->pointerOnLog, data_size, 1);
 
 		} else {
 			//printf("(Server) retval: %d\n", retval);
@@ -152,6 +152,7 @@ void *client_listener(void * parm) {
 			0, (const struct sockaddr *) &cliaddr, sizeof(servaddr));
 			printf("(Server) Message sent on port %d. Bytes sent: %d. Time elapsed: %.4fs\n", port, bytes_sent, time_elapsed);
 
+            args->pointerOnLog = logThread->addLog(args->pointerOnLog, data_size, 2);
 			//TODO - dodanie danych do logów
 
 			msg_counter = 0;
@@ -209,7 +210,7 @@ void *save_log_thread(void * parm) {
 // Driver code
 int main() {
 	int sockfd;
-	int structure[3]; //meta structure
+	int structure[4]; //meta structure
 	int freeport;
 	int ID = 100;
     int freeportsOld[20];
@@ -285,7 +286,7 @@ int main() {
 			args.logID = ID;
 			args.data_delay = structure[1];
 			args.data_size = structure[2];
-			args.pointerOnLog = logThread->addThreat(ID);
+			args.pointerOnLog = logThread->addThreat(ID, freeport);
 
 			//create new client thread on free port and supply it with data needed for communication
 			pthread_create(&cThread[freeport-8081], NULL, client_listener, (void *)&args);
@@ -304,6 +305,10 @@ int main() {
 			int data_bytes = structure[2];
 			int data_ID = freeports[data_port-8081];
 			printf("Client on port number: %d with log ID: %d recieived %d bytes.\n", data_port, data_ID, data_bytes);
+            //printf("===============  %d  ==========.\n", data_ID);
+
+
+			logThread->saveClientLogs(data_ID, data_port, data_bytes, 1);
 			//TODO - dodanie danych do logów
 		}
 		if(structure[0] == 4){
@@ -312,6 +317,7 @@ int main() {
 			int data_bytes = structure[2];
 			int data_ID = freeports[data_port-8081];
 			printf("Client on port number: %d with log ID: %d sent %d bytes.\n", data_port, data_ID, data_bytes);
+			logThread->saveClientLogs(data_ID, data_port, data_bytes, 2);
 			//TODO - dodanie danych do logów
 		}
 	}

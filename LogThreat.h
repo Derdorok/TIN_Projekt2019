@@ -61,14 +61,18 @@ class LogThreat{
     struct logNode {
         int logId = -1;
         int threatId = -1;
+        int type = 0;
 
         time_t arriveTime = 0;  //kiedy przybył na wątek serwera
+        time_t sendTime = 0;
         int logSize = -1;
+        int port = 0;
         struct logNode *next = nullptr;
     };
 
     struct threatNode {
         int threatId = -1;
+        int port = 0;
         struct threatNode  *next = nullptr;
         struct logNode     *log  = nullptr;
         struct logNode *logtail  = nullptr;
@@ -98,7 +102,7 @@ class LogThreat{
         /** Wywoływane zawsze przy tworzeniu nowego wątku
             zwraca wskaźnik na ostatni obiekt logów.
             Kolejne logi dodawane są na końcu aktualnego*/
-            logNode* addThreat(int threatId);
+            logNode* addThreat(int threatId, int port);
 
 		/** Wywoływane zawsze przy niszczeniu wątku */
             void deleteThreat(int threatId);
@@ -109,7 +113,7 @@ class LogThreat{
             dane które znajdują się w komunikacie Logu.
             Takie danych jak logId, threatId, arriveTime
             obliczane są automatycznie*/
-            logNode* addLog(logNode* lastLog, int logSize);
+            logNode* addLog(logNode* lastLog, int logSize, int type);
 
 
         /** Zapisywanie logów odbieranych przez wątki serwera.
@@ -119,7 +123,7 @@ class LogThreat{
             void saveServerLogs(int threatId);
 
         /** Zapisywanie logów odbieranych przez wątki klientów*/
-            void saveClientLogs(int threatId);
+            void saveClientLogs(int threatId, int port, int sizeLog, int type);
 
 
             void saveLogsToFile();
