@@ -1,0 +1,14 @@
+Nr. 1    Port: 8081       Czas Przybycia: 0            Rozmiar: 10
+Nr. 2    Port: 8081       Czas Przybycia: 0            Rozmiar: 10
+Nr. 3    Port: 8081       Czas Przybycia: 0            Rozmiar: 10
+Nr. 4    Port: 8081       Czas Przybycia: 0            Rozmiar: 10
+Nr. 5    Port: 8081       Czas Przybycia: 0            Rozmiar: 10
+Nr. 6    Port: 8081       Czas Przybycia: 0            Rozmiar: 10
+Nr. 7    Port: 8081       Czas Przybycia: 0            Rozmiar: 10
+Nr. 8    Port: 8081       Czas Przybycia: 0            Rozmiar: 10
+Nr. 1    Port: 8081        Czas Wysłania: 0            Rozmiar: 10
+Nr. 2    Port: 8081       Czas Przybycia: 0            Rozmiar: 10
+Nr. 3    Port: 8081        Czas Wysłania: 0            Rozmiar: 10
+Nr. 4    Port: 8081        Czas Wysłania: 0            Rozmiar: 10
+Nr. 5    Port: 8081        Czas Wysłania: 0            Rozmiar: 10
+Nr. 6    Port: 8081       Czas Przybycia: 0            Rozmiar: 10
